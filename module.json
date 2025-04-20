@@ -1,0 +1,14 @@
+{
+  "name": "add-item-count",
+  "title": "Item Grant Quantity",
+  "description": "Adds a quantity field to item grants in advancement configurations (e.g., backgrounds and classes) for Foundry VTT (DnD5e).",
+  "version": "1.0.0",
+  "author": "jrleavey",
+  "minimumCoreVersion": "11",
+  "compatibleCoreVersion": "12",
+  "systems": ["dnd5e"],
+  "esmodules": ["main.js"],
+  "url": "https://github.com/jrleavey/Add-Item-Count_Foundry",
+  "manifest": "https://raw.githubusercontent.com/jrleavey/Add-Item-Count_Foundry/main/module.json",
+  "download": "https://github.com/jrleavey/Add-Item-Count_Foundry/archive/refs/heads/main.zip"
+}
