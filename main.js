@@ -3,13 +3,12 @@ console.log("🔧 [Add-Item-Count] Module loaded.");
 Hooks.once("ready", () => {
   console.log("✅ [Add-Item-Count] Hooks ready. System:", game.system.id, "Version:", game.system.version);
 
-  // Patch the grant function to apply quantity on item creation
   const originalGrant = CONFIG.DND5E.AdvancementTypes.ItemGrant.prototype._grant;
 
   CONFIG.DND5E.AdvancementTypes.ItemGrant.prototype._grant = async function (actor, advancement, data = {}) {
     console.log("🟨 [Add-Item-Count] Grant function called.");
     const granted = [];
-    const config = advancement.system.config || {};
+    const config = advancement.config || {};
     const items = config.items || [];
     const quantities = config.quantities || {};
 
@@ -39,15 +38,15 @@ Hooks.once("ready", () => {
 
 Hooks.on("renderAdvancementConfig", (app, html, data) => {
   console.log("🧩 [Add-Item-Count] renderAdvancementConfig triggered.");
-  const advancement = app.document;
+  const advancement = app.object;
   if (!advancement) {
-    console.warn("⛔ [Add-Item-Count] No advancement document found.");
+    console.warn("⛔ [Add-Item-Count] No advancement object found.");
     return;
   }
 
-  console.log("📄 [Add-Item-Count] Advancement type:", advancement.system.type);
+  console.log("📄 [Add-Item-Count] Advancement type:", advancement.system?.type);
 
-  if (advancement.system.type !== "ItemGrant") {
+  if (advancement.system?.type !== "ItemGrant") {
     console.log("🚫 [Add-Item-Count] Not an ItemGrant advancement. Skipping.");
     return;
   }
