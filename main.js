@@ -60,9 +60,20 @@ Hooks.on("renderAdvancementConfig", (app, html, data) => {
 
     field.addEventListener("change", event => {
       const value = Math.max(parseInt(event.target.value), 1);
-      advancement.update({
-        [`config.quantities.${uuid}`]: value
+      console.log(`✏️ [Add-Item-Count] Set quantity = ${value} for item ${uuid}`);
+
+      advancement.updateSource({
+        config: {
+          ...advancement.config,
+          quantities: {
+            ...advancement.config.quantities,
+            [uuid]: value
+          }
+        }
       });
+
+      // Optional visual feedback
+      field.style.border = "2px solid orange";
     });
 
     el.appendChild(field);
