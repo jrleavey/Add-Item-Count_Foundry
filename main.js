@@ -1,10 +1,9 @@
-ui.notifications.error("[Add-Item-Count] Module loaded and active!");
-
-console.log("🔧 [Add-Item-Count] Module loaded.");
+ui.notifications.error("[Add-Item-Count] Quantity Editor Module Loaded!");
 
 Hooks.once("ready", () => {
-  console.log("✅ [Add-Item-Count] Ready. DnD5e Quantity Patch Live");
+  console.log("✅ [Add-Item-Count] Module active");
 
+  // Patch the actual grant logic
   const originalGrant = CONFIG.DND5E.AdvancementTypes.ItemGrant.prototype._grant;
 
   CONFIG.DND5E.AdvancementTypes.ItemGrant.prototype._grant = async function (actor, advancement, data = {}) {
@@ -17,7 +16,7 @@ Hooks.once("ready", () => {
       const item = await fromUuid(uuid);
       if (!item) continue;
 
-      const quantity = Math.max(parseInt(quantities[uuid] || 1), 1);
+      const quantity = Math.max(parseInt(quantities[uuid] ?? 1), 1);
       const itemData = item.toObject();
 
       if (itemData.system?.quantity !== undefined) {
@@ -31,51 +30,67 @@ Hooks.once("ready", () => {
   };
 });
 
+// Add the "Edit Quantities" button
 Hooks.on("renderAdvancementConfig", (app, html, data) => {
   const advancement = app.object;
-  if (!advancement) return;
-
-  if (advancement.type !== "ItemGrant") return;
+  if (!advancement || advancement.type !== "ItemGrant") return;
 
   const config = advancement.config || {};
   const items = config.items || [];
   const quantities = config.quantities || {};
 
-  console.log("📦 [Add-Item-Count] Found", items.length, "items.");
-  const itemElements = html.find(".advancement-config__items .advancement-config__item");
-  console.log("🎯 Matching DOM items:", itemElements.length);
+  // Inject the Edit Quantities button below the Items field
+  const itemsField = html.find('[name="config.items"]');
+  if (!itemsField.length) return;
 
-  itemElements.each((i, el) => {
-    const uuid = items[i];
-    if (!uuid) return;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = "⚙️ Edit Quantities";
+  button.style.marginTop = "0.5em";
 
-    const field = document.createElement("input");
-    field.type = "number";
-    field.min = "1";
-    field.classList.add("item-quantity-input");
-    field.value = quantities[uuid] ?? 1;
-
-    field.style.marginLeft = "0.5em";
-    field.style.width = "4em";
-
-    field.addEventListener("change", event => {
-      const value = Math.max(parseInt(event.target.value), 1);
-      console.log(`✏️ [Add-Item-Count] Set quantity = ${value} for item ${uuid}`);
-
-      advancement.updateSource({
-        config: {
-          ...advancement.config,
-          quantities: {
-            ...advancement.config.quantities,
-            [uuid]: value
-          }
-        }
-      });
-
-      // Optional visual feedback
-      field.style.border = "2px solid orange";
+  button.addEventListener("click", () => {
+    const list = items.map(uuid => {
+      const name = fromUuidSync(uuid)?.name || uuid;
+      const qty = quantities[uuid] ?? 1;
+      return { uuid, name, qty };
     });
 
-    el.appendChild(field);
+    const content = document.createElement("div");
+    list.forEach(({ uuid, name, qty }) => {
+      const row = document.createElement("div");
+      row.style.margin = "0.5em 0";
+      row.innerHTML = `
+        <label style="width: 60%; display: inline-block;">${name}</label>
+        <input type="number" data-uuid="${uuid}" value="${qty}" min="1" style="width: 4em;">
+      `;
+      content.appendChild(row);
+    });
+
+    new Dialog({
+      title: "Set Item Quantities",
+      content,
+      buttons: {
+        save: {
+          label: "Save",
+          callback: () => {
+            const updates = {};
+            content.querySelectorAll("input").forEach(input => {
+              const uuid = input.dataset.uuid;
+              const val = Math.max(parseInt(input.value), 1);
+              updates[`config.quantities.${uuid}`] = val;
+            });
+            advancement.updateSource(updates);
+            ui.notifications.info("✅ Quantities updated.");
+          }
+        },
+        cancel: {
+          label: "Cancel"
+        }
+      },
+      default: "save"
+    }).render(true);
   });
+
+  // Append after the item field's parent div
+  itemsField.closest(".form-group")?.append(button);
 });
