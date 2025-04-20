@@ -1,21 +1,24 @@
-Hooks.on("renderItemGrantConfig", (app, html, data) => {
-  const config = app.object?.config || {};
-  const quantity = config.quantity ?? 1;
+Hooks.on("dnd5e.preAdvancementItemConfig", (app, html, config) => {
+  if (config.type !== "ItemGrant") return;
 
-  const quantityInput = $(`
-    <div class="form-group">
-      <label>Quantity</label>
-      <input type="number" name="config.quantity" value="${quantity}" min="1" />
-    </div>
-  `);
+  // Add quantity field to the form
+  const qty = config.quantity ?? 1;
 
-  html.find(".form-group").last().after(quantityInput);
+  const field = document.createElement("div");
+  field.classList.add("form-group");
+  field.innerHTML = `
+    <label>Quantity</label>
+    <input type="number" name="quantity" value="${qty}" min="1"/>
+  `;
+
+  html.querySelector("form").appendChild(field);
 });
 
+// Monkey patch the item grant apply logic
 Hooks.once("ready", () => {
-  const originalGrant = CONFIG.DND5E.AdvancementTypes.ItemGrant.prototype._grant;
+  const grant = CONFIG.DND5E.AdvancementTypes.ItemGrant.prototype._grant;
 
-  CONFIG.DND5E.AdvancementTypes.ItemGrant.prototype._grant = async function (actor, advancement, data) {
+  CONFIG.DND5E.AdvancementTypes.ItemGrant.prototype._grant = async function (actor, advancement, data = {}) {
     const granted = [];
     const quantity = advancement.config.quantity ?? 1;
 
